@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+
+# Local AI-assistant context (not published)
+CLAUDE.md
+.claude/
+
+# Python / uv (uv.lock IS tracked)
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+*.egg-info/
+
+# CMake / C / C++ build output
+build/
+cmake-build-*/          # CLion default build dirs (cmake-build-debug, cmake-build-release, …)
+CMakeUserPresets.json
+*.o
+*.obj
+*.elf
+*.map
+compile_commands.json
+
+# STM32CubeIDE leftovers (if a module is ever opened in the IDE)
+Debug/
+Release/
+*.launch
+
+# LTspice temp output (keep .asc schematics)
+*.raw
+*.log.raw
+*.op.raw
+
+# JetBrains IDEs (CLion, PyCharm)
+.idea/
+*.iml
+out/
+
+# Other editors
+.vscode/

@@ -1,0 +1,33 @@
+[project]
+name = "course2-labs"
+version = "0.1.0"
+description = "Python for the Course 2 embedded DSP labs: simulate-first prototypes, serial capture, analysis, and plotting (per-lab work in labs/lab-M-N/host/)"
+requires-python = ">=3.13"
+dependencies = [
+    # numerics + DSP reference implementations
+    "numpy",
+    "scipy",
+    # plotting + notebooks (JupyterLab, ipykernel, nbconvert included)
+    "matplotlib",
+    "jupyter",
+    "jupyterlab",
+    # instrument / device links
+    "pyserial",
+    # audio labs (M6, M8, M9): playback/capture + WAV I/O + features
+    "sounddevice",
+    "soundfile",
+    "librosa",
+    # image & video labs (M9): reference implementations the device output is checked against
+    "opencv-python",
+    "pillow",
+]
+
+[dependency-groups]
+# Module 8 training/export notebooks — heavyweight, pull in only when needed:
+#   uv sync --group ml
+ml = [
+    "torch",
+    "onnx",
+    "onnxruntime",
+    "tensorflow",
+]
