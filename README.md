@@ -1,6 +1,8 @@
 # Course 2 — Embedded DSP Labs
 
-Companion repository for [Course 2 — Embedded DSP](https://www.diiv.io/course2/) on [diiv.io](https://www.diiv.io): 45 bench labs from power-supply safety through real-time DSP firmware, edge ML, and host-in-the-loop audio/image/video processing. Each lab is a self-contained folder under `labs/`.
+Companion repository for [Course 2 — Embedded DSP](https://www.diiv.io/course2/) on [diiv.io](https://www.diiv.io): 45 bench labs from power-supply safety through real-time DSP firmware, edge ML, and host-in-the-loop audio/image/video processing. Each lab is a self-contained folder under `labs/`. This repo is in-progress and like the main course website it's expanded usually on weekends when I have time so may not be fully complete for a long while. But it's my weekend hobby project when I'm not dealing with work stuff that spills into weeks or family thing with my wife (and I guess kids if that happens). My main priorities are my full time job and my family but I hope to have this fully complete at some point but enjoy the incremental progress as it updates and I hope it's useful to others. 
+
+NOTE on AI Use: I have a strong NO-AI policy for any Code and Reports you find in this repo beyond the boilerplate skeleton repo structure that I used AI to help setup. The whole point of this repo is for me to learn which is why using AI to generate any code or write ups or reports would completely defeat that purpose of learning and analyzing.
 
 ## Hardware targets
 
