@@ -1,0 +1,7 @@
+add_subdirectory(core)
+if(COURSE4_ENABLE_VULKAN)
+  add_subdirectory(vulkan)
+endif()
+if(COURSE4_ENABLE_METAL)
+  add_subdirectory(metal)
+endif()

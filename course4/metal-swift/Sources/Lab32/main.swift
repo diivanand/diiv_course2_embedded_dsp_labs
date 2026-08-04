@@ -1,0 +1,4 @@
+// Lab 3.2 (Metal/Swift) — your app goes here (see the lab page on diiv.io).
+// The MTKView host, delegate, and shaders are yours to write; this stub only
+// proves the package builds.
+print("lab 3.2 (Metal/Swift): build OK — your code goes here")

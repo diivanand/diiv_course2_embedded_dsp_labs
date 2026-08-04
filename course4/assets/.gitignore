@@ -1,0 +1,5 @@
+# Assets are downloaded per-lab (glTF samples, HDR environments, 3DGS .ply
+# scenes) and are too large for git. Keep the sources listed in docs/setup.md.
+*
+!.gitignore
+!README.md

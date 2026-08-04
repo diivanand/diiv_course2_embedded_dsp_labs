@@ -1,0 +1,64 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 28, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (ASan+UBSan, Tracy off)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "COURSE4_SANITIZE": "ON",
+        "TRACY_ENABLE": "OFF"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (optimized, Tracy off)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "COURSE4_SANITIZE": "OFF",
+        "TRACY_ENABLE": "OFF"
+      }
+    },
+    {
+      "name": "profile",
+      "displayName": "Profile (optimized + Tracy instrumentation)",
+      "inherits": "release",
+      "cacheVariables": {
+        "TRACY_ENABLE": "ON"
+      }
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux/4090: release + CUDA labs",
+      "inherits": "release",
+      "cacheVariables": {
+        "COURSE4_ENABLE_CUDA": "ON",
+        "CMAKE_CUDA_ARCHITECTURES": "89"
+      }
+    },
+    {
+      "name": "linux-profile",
+      "displayName": "Linux/4090: profile + CUDA labs",
+      "inherits": "linux-release",
+      "cacheVariables": {
+        "TRACY_ENABLE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "profile", "configurePreset": "profile" },
+    { "name": "linux-release", "configurePreset": "linux-release" },
+    { "name": "linux-profile", "configurePreset": "linux-profile" }
+  ]
+}

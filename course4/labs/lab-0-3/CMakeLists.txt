@@ -1,0 +1,5 @@
+if(NOT TARGET engine_vulkan)
+  return()
+endif()
+add_executable(lab_0_3 src/main.cpp)
+target_link_libraries(lab_0_3 PRIVATE course4_options engine_vulkan)

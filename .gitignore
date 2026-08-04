@@ -39,3 +39,9 @@ out/
 
 # Other editors
 .vscode/
+
+# SwiftPM build output
+.build/
+
+# Apple metal-cpp drop-in (downloaded, not tracked)
+course4/third_party/metal-cpp/
