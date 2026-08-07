@@ -1,35 +1,144 @@
 # firmware/ — STM32 CMake projects (C18)
 
-One CMake project per module, targeting the **NUCLEO-L476RG** (STM32L476RG, Cortex-M4F, hard FP, 80 MHz). Labs within a module share the module's project.
+One CMake project per module, targeting the **NUCLEO-L476RG** (STM32L476RG, Cortex-M4F, hard FP,
+80 MHz). Labs within a module share that module's project — never one project per lab.
 
 | Project | Modules / labs |
 |---|---|
 | `m2-timing/` | Module 2 — GPIO timing, timer interrupts, UART |
 | `m3-mixed/`  | Module 3 — I²C DAC/ADC (MCP4725, ADS1115) |
-| `m5-daq/`    | Module 5 — ADC single/timer-triggered/DMA-circular acquisition |
+| `m5-daq/`    | Module 5 — ADC single / timer-triggered / DMA-circular acquisition |
 | `m6-dsp/`    | Module 6 — FIR, IIR, FFT, PSD, Goertzel, Kalman, matched filter, LMS, CFAR |
 | `m7-rtos/`   | Module 7 — watchdog/HardFault, FreeRTOS pipeline, capstone |
-| `m9-media/`  | Module 9 — host-in-the-loop streaming DSP (921600-baud harness) |
+| `m9-media/`  | Module 9 — host-in-the-loop streaming DSP (921600 baud) |
 
-## Creating a module project
+Plus two things that are **not** MCU projects:
 
-1. **STM32CubeMX** → New Project → board **NUCLEO-L476RG** → configure peripherals/clocks (80 MHz; see the lab's *Project & environment setup* tables on the course pages).
-2. Project Manager → Toolchain/IDE: **CMake** → generate into the module folder. CubeMX emits the project's own `CMakeLists.txt` plus a `cmake/gcc-arm-none-eabi.cmake` toolchain file and the HAL/LL drivers.
-3. **C standard = C18**: CubeMX generates `set(CMAKE_C_STANDARD 11)` — change it to `17` (CMake's name for the C17/C18 standard; equivalently `-std=gnu17`). arm-none-eabi-gcc fully supports C17/C18.
-4. Build:
+| Dir | What |
+|---|---|
+| `shared/` | MCU-independent kernels — portable C, no HAL, no CMSIS. Compiled into every module project *and* by the host harness. |
+| `host/`   | Native build + test of `shared/`. **Works today, no ARM toolchain, no board.** |
 
-   ```sh
-   cmake --preset Debug     # or: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake
-   cmake --build --preset Debug
-   ```
+## Prerequisites
 
-   Flash with STM32CubeProgrammer or `pyocd`/`st-flash`.
+The ARM toolchain is **not** installed on this machine. Everything else in the repo builds without
+it — only the six MCU projects need it:
 
-A shared reference toolchain file lives at `cmake/gcc-arm-none-eabi.cmake` for any hand-rolled targets (e.g. host-side unit builds of DSP kernels); CubeMX-generated projects use their own generated copy.
+```sh
+brew install --cask gcc-arm-embedded      # Arm's official GNU toolchain
+# or
+brew install arm-none-eabi-gcc
+```
+
+Already have STM32CubeCLT? Point CMake at its copy instead of installing a second one:
+
+```sh
+cmake --preset debug -DARM_TOOLCHAIN_DIR=/opt/ST/STM32CubeCLT/GNU-tools-for-STM32/bin
+```
+
+Configuring without a toolchain fails immediately with these instructions rather than a wall of
+CMake compiler-detection errors.
+
+For flashing: **STM32CubeProgrammer** (`STM32_Programmer_CLI` on PATH) — used by `make flash-*`.
+
+## Start here: `host/` — the part that works right now
+
+The course's rule is *simulate in Python first, then write C*. `shared/` + `host/` is the bridge
+between those two: write the kernel once as portable C, test it natively on the Mac under
+sanitizers against your NumPy reference, then compile that same unmodified file into the module's
+firmware.
+
+```sh
+cd host
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
+```
+
+- Every `.c` in `../shared/src/` goes into a `kernels` static library.
+- Every `tests/*.c` becomes its own test executable, registered with CTest. No list to maintain —
+  add a file, re-configure, it runs.
+- **ASan + UBSan are on** in the debug preset. These kernels do buffer arithmetic and fixed-point
+  saturation, which is exactly where the bugs are. `--preset release` turns them off for timing.
+
+Both directories start empty, and the build is designed to succeed that way on a fresh clone.
+
+## The MCU projects
+
+### One-time generation with CubeMX
+
+The HAL drivers, startup code, linker script, and `Core/` tree are CubeMX's output, not something
+this repo carries.
+
+1. **STM32CubeMX** → New Project → board **NUCLEO-L476RG**.
+2. Configure clocks and peripherals per the lab's *Project & environment setup* table on the course
+   page (80 MHz system clock throughout).
+3. Project Manager → Toolchain/IDE = **CMake** → generate **into the module folder**
+   (e.g. `firmware/m5-daq/`).
+4. CubeMX writes its own `CMakeLists.txt`. **Delete it** — this repo's `CMakeLists.txt` already
+   there is the one to keep. Everything CubeMX generates under `Core/` and `Drivers/` is picked up
+   automatically by glob.
+
+You do *not* need to hand-edit the generated files. In particular the usual "CubeMX emits
+`CMAKE_C_STANDARD 11`, bump it to 17" chore is already handled centrally in
+`cmake/stm32_firmware.cmake`.
+
+### Build and flash
+
+```sh
+cd m5-daq
+cmake --preset debug            # or: --preset release
+cmake --build --preset debug
+cmake --build --preset debug --target flash-m5-daq
+```
+
+Every build prints a `size` report and the linker's memory-usage summary, and emits `.hex` and
+`.bin` next to the `.elf`. A `.map` file is written for every link.
+
+| Preset | Flags |
+|---|---|
+| `debug` | `-Og -g3` — the default; steps cleanly in a debugger |
+| `release` | `-O2 -g` — what you benchmark against with the DWT cycle counter |
+
+### Where your code goes
+
+```
+m6-dsp/
+  CMakeLists.txt        # yours, already written — usually never edited
+  CMakePresets.json     # debug / release
+  Core/  Drivers/       # CubeMX output (generated, not hand-edited)
+  src/                  # your module code            <- write here
+  include/              # your headers                <- and here
+  *.ld                  # CubeMX linker script
+```
+
+`src/`, `include/`, and `../shared/` are globbed with `CONFIGURE_DEPENDS`, so adding a file and
+rebuilding is enough — CMake re-runs itself.
 
 ## Libraries
 
 - **HAL/LL drivers** — generated per project by CubeMX.
-- **CMSIS-DSP** (`arm_math.h`) — used from Module 6 on. In CubeMX: Software Packs → X-CUBE, or add the [CMSIS-DSP](https://github.com/ARM-software/CMSIS-DSP) sources to the project and define `ARM_MATH_CM4`; link with the FPU flags (`-mfpu=fpv4-sp-d16 -mfloat-abi=hard`).
-- **FreeRTOS** (Module 7, and the bare-metal-vs-RTOS comparison labs) — CubeMX Middleware → FREERTOS, interface **CMSIS_V2**; set the HAL timebase to a spare timer (course convention: **TIM6**), never SysTick.
-- **DWT cycle counter** — the course's timing convention for benchmarking kernels (`DWT->CYCCNT` at 80 MHz).
+- **CMSIS-DSP** (`arm_math.h`) — from Module 6 on. `m6-dsp`, `m7-rtos`, and `m9-media` already pass
+  `CMSIS_DSP` to `stm32_add_firmware()`; it needs the sources present:
+
+  ```sh
+  git clone --depth 1 https://github.com/ARM-software/CMSIS-DSP m6-dsp/Drivers/CMSIS-DSP
+  ```
+
+  The build defines `ARM_MATH_CM4`, `__FPU_PRESENT=1U`, and `ARM_MATH_LOOPUNROLL`, and compiles with
+  the hard-float flags. If the directory is missing you get a one-line error with that clone command.
+- **FreeRTOS** (Module 7, and the bare-metal-vs-RTOS comparison labs) — CubeMX Middleware →
+  FREERTOS, interface **CMSIS_V2**. Set the HAL timebase to a spare timer — course convention is
+  **TIM6** — never SysTick.
+- **DWT cycle counter** — the course's benchmarking convention (`DWT->CYCCNT` at 80 MHz).
+
+## What `stm32_add_firmware()` does
+
+`cmake/stm32_firmware.cmake` holds the single helper each module calls, so the six `CMakeLists.txt`
+files stay three lines long. It sets C18/C++20, globs `Core/ Drivers/ src/ ../shared/src/`, adds the
+HAL and CMSIS include paths that exist, defines `USE_HAL_DRIVER` and `STM32L476xx`, finds the
+CubeMX linker script, adds `-Wall -Wextra -Wshadow`, and attaches the size report, hex/bin
+conversion, and `flash-<module>` target. Optional `CMSIS_DSP` wires in the DSP library.
+
+Each failure mode it can hit — no sources, no linker script, missing CMSIS-DSP — reports what to do
+about it rather than failing obscurely.

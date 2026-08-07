@@ -29,11 +29,27 @@ labs/lab-<M>-<N>/   one folder per lab: README.md (link to the lab page),
                     Python, exported models)
 firmware/           STM32 CMake projects (C18), one per module, shared by that
                     module's labs — see firmware/README.md
+  shared/           MCU-independent DSP kernels (portable C, no HAL): compiled
+                    into every module project AND by the host harness below
+  host/             native build + CTest of shared/ — runs on the Mac today,
+                    with no ARM toolchain and no board
 docs/               reading-map.md (bookshelf → modules), edge-setup.md
                     (Pi 5 / Jetson + C++20 CMake template)
 media/in|out/       shared Module 9 test media
 hardware/           breadboard photos, LTspice .asc schematics, datasheets
 ```
+
+## Build
+
+```bash
+uv sync                                  # from the repo root: Python for every lab's host/
+cd firmware/host                         # portable kernels — works right now
+cmake --preset debug && cmake --build --preset debug && ctest --preset debug
+```
+
+STM32 firmware needs `arm-none-eabi-gcc` plus a one-time CubeMX generation per module; both are
+covered in [`firmware/README.md`](firmware/README.md), and configuring without the toolchain tells
+you exactly what to install.
 
 ## Workflow
 
